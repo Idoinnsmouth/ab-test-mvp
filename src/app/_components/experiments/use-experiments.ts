@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 
-import { api } from "~/trpc/react";
+import { api, type RouterInputs } from "~/trpc/react";
+
+type ListInput = RouterInputs["experiments"]["list"];
 
 export function useExperiments() {
   const utils = api.useUtils();
@@ -15,7 +17,7 @@ export function useExperiments() {
     return () => window.clearTimeout(handle);
   }, [search]);
 
-  const queryInput =
+  const queryInput: ListInput =
     debouncedSearch.length > 0 ? { search: debouncedSearch } : undefined;
 
   const queryResult = api.experiments.list.useQuery(queryInput, {
@@ -23,7 +25,21 @@ export function useExperiments() {
   });
 
   const deleteMutation = api.experiments.delete.useMutation({
-    onSuccess: async () => {
+    onMutate: async ({ id }) => {
+      const input = queryInput;
+      await utils.experiments.list.cancel(input);
+      const previous = utils.experiments.list.getData(input);
+      utils.experiments.list.setData(input, (prev) =>
+        prev?.filter((experiment) => experiment.id !== id) ?? prev,
+      );
+      return { previous, input };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        utils.experiments.list.setData(context.input, context.previous);
+      }
+    },
+    onSettled: async () => {
       await utils.experiments.list.invalidate();
     },
   });
