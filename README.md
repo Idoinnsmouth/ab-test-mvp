@@ -8,6 +8,7 @@ Requirements: Node.js 20+, npm 10+, SQLite (bundled).
 ```bash
 cd ab-test-mvp
 npm install
+npm run db:migrate
 npm run dev    # http://localhost:3000
 ```
 
