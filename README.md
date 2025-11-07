@@ -1,29 +1,59 @@
-# Create T3 App
+# A/B Test MVP
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+Small A/B testing dashboard built with Next.js App Router, tRPC, Prisma (SQLite) and shadcn/ui.
 
-## What's next? How do I make an app with this?
+## Install & Run
+Requirements: Node.js 20+, npm 10+, SQLite (bundled).
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+```bash
+cd ab-test-mvp
+npm install
+npm run dev    # http://localhost:3000
+```
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+Production build:
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+```bash
+npm run build
+npm run start
+```
 
-## Learn More
+### Docker
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+```bash
+docker build -t ab-test-mvp .
+docker run --rm -p 3000:3000 --name ab-test-mvp ab-test-mvp
+```
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+The entrypoint runs `prisma migrate deploy` before `next start`.
+To persist the SQLite DB, mount a volume and override `DATABASE_URL`, e.g.
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+```
+docker run --rm -p 3000:3000 \
+  -v $(pwd)/data:/data \
+  -e DATABASE_URL=file:/data/db.sqlite \
+  ab-test-mvp
+```
 
-## How do I deploy this?
+## Storage Choice
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+- SQLite keeps the stack lightweight and portable.
+- Prisma schema enforces relations: Experiments → Variants/Assignments with cascades.
+- Sticky assignments stored in a dedicated `Assignment` table; unique `(experimentId,userId)` ensures determinism.
+
+## Assumptions
+
+1. No authentication/authorization (single-tenant admin UI).
+2. Experiments must have ≥2 variants; weights are integers 0–100.
+3. Sticky assignment uses weighted random selection with persistence.
+4. Dark theme UX via shadcn/ui components; no additional theming requirements.
+5. Deploy target supports running Prisma migrations at startup (entrypoint handles this).
+
+## Next Steps
+
+1. Go microservice for assignment logic
+2. Automated tests for assignment logic
+3. Seed script to create sample experiments/variants for demos.
+4. Add roles with NextAuth (viewer/editor/admin)
+5. Analytics (per-variant counts, conversion hooks).
+6. Deployment recipe for Vercel/Fly.io with externalized SQLite or Turso.
