@@ -2,20 +2,29 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-    provider = "prisma-client-js"
-    output   = "../generated/prisma"
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
 datasource db {
-    provider = "sqlite"
-    url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+enum ExperimentStatus {
+  draft
+  active
+  paused
+  completed
+}
 
-    @@index([name])
+model Experiment {
+  id        String           @id @default(cuid())
+  name      String           @unique
+  status    ExperimentStatus @default(draft)
+  strategy  String           @default("uniform")
+  startAt   DateTime?
+  endAt     DateTime?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 }
