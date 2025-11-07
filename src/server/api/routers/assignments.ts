@@ -44,6 +44,20 @@ const pickVariant = (
 };
 
 export const assignmentsRouter = createTRPCRouter({
+  list: publicProcedure
+    .input(z.object({ experimentId: z.string().cuid() }).optional())
+    .query(({ ctx, input }) => {
+      if (!input?.experimentId) {
+        return [];
+      }
+
+      return ctx.db.assignment.findMany({
+        where: { experimentId: input.experimentId },
+        include: { variant: true },
+        orderBy: [{ createdAt: "desc" }],
+      });
+    }),
+
   get: publicProcedure
     .input(assignmentInputSchema)
     .query(async ({ ctx, input }) => {

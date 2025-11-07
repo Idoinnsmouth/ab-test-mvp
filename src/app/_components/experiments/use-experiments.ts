@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { api, type RouterInputs } from "~/trpc/react";
+import { type ExperimentStatus } from "./types";
 
 type ListInput = RouterInputs["experiments"]["list"];
 
@@ -8,6 +9,9 @@ export function useExperiments() {
   const utils = api.useUtils();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ExperimentStatus | "all">(
+    "all",
+  );
 
   useEffect(() => {
     const handle = window.setTimeout(
@@ -17,8 +21,14 @@ export function useExperiments() {
     return () => window.clearTimeout(handle);
   }, [search]);
 
-  const queryInput: ListInput =
-    debouncedSearch.length > 0 ? { search: debouncedSearch } : undefined;
+  const listInput: ListInput = {};
+  if (debouncedSearch.length > 0) {
+    listInput.search = debouncedSearch;
+  }
+  if (statusFilter !== "all") {
+    listInput.status = [statusFilter];
+  }
+  const queryInput = Object.keys(listInput).length > 0 ? listInput : undefined;
 
   const queryResult = api.experiments.list.useQuery(queryInput, {
     placeholderData: (prev) => prev ?? [],
@@ -49,6 +59,8 @@ export function useExperiments() {
   return {
     search,
     setSearch,
+    statusFilter,
+    setStatusFilter,
     experiments: queryResult.data ?? [],
     isLoading: queryResult.isLoading,
     isFetching: queryResult.isFetching,

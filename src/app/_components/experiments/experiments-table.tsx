@@ -51,6 +51,7 @@ export function ExperimentsTable({
               <TableHead>Name</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Strategy</TableHead>
+              <TableHead className="text-center">Variants</TableHead>
               <TableHead>Schedule</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -80,6 +81,9 @@ export function ExperimentsTable({
                 </TableCell>
                 <TableCell className="capitalize text-zinc-200">
                   {experiment.strategy}
+                </TableCell>
+                <TableCell className="text-center text-zinc-100">
+                  {experiment._count?.variants ?? 0}
                 </TableCell>
                 <TableCell>
                   <ScheduleDisplay experiment={experiment} />

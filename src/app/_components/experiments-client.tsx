@@ -6,6 +6,7 @@ import { PlusIcon, SearchIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogTrigger } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
+import { statusLabels } from "./experiments/constants";
 import { ExperimentFormDialog } from "./experiments/experiment-form-dialog";
 import { ExperimentsTable } from "./experiments/experiments-table";
 import { useExperiments } from "./experiments/use-experiments";
@@ -15,6 +16,8 @@ export function ExperimentsClient() {
   const {
     search,
     setSearch,
+    statusFilter,
+    setStatusFilter,
     experiments,
     isLoading,
     isFetching,
@@ -58,6 +61,30 @@ export function ExperimentsClient() {
               onChange={(event) => setSearch(event.target.value)}
               className="bg-white/5 pl-9 text-white placeholder:text-zinc-500"
             />
+          </div>
+          <div className="w-full sm:max-w-xs">
+            <label className="sr-only" htmlFor="status-filter">
+              Filter by status
+            </label>
+            <select
+              id="status-filter"
+              value={statusFilter}
+              onChange={(event) =>
+                setStatusFilter(
+                  event.target.value === "all"
+                    ? "all"
+                    : (event.target.value as typeof statusFilter),
+                )
+              }
+              className="border-input bg-white/5 text-sm text-white outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] dark:bg-input/30 h-9 w-full rounded-md border px-3"
+            >
+              <option value="all">All statuses</option>
+              {Object.entries(statusLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
           </div>
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>

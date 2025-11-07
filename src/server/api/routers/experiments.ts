@@ -135,6 +135,13 @@ export const experimentsRouter = createTRPCRouter({
     return ctx.db.experiment.findMany({
       where,
       orderBy: [{ createdAt: "desc" }],
+      include: {
+        _count: {
+          select: {
+            variants: true,
+          },
+        },
+      },
     });
   }),
 

@@ -2,6 +2,7 @@ import { Trash2Icon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { Slider } from "~/components/ui/slider";
 import {
   Table,
   TableBody,
@@ -48,16 +49,28 @@ export function VariantsTable({
                 />
               </TableCell>
               <TableCell>
-                <Input
-                  type="number"
-                  value={variant.weight}
-                  onChange={(event) =>
-                    onChange(index, "weight", event.target.value)
-                  }
-                  min={0}
-                  max={100}
-                  className="bg-white/5 text-white"
-                />
+                <div className="flex items-center gap-3">
+                  <Slider
+                    value={[
+                      typeof variant.weight === "number"
+                        ? variant.weight
+                        : Number(variant.weight) || 0,
+                    ]}
+                    min={0}
+                    max={100}
+                    step={1}
+                    onValueChange={([value]) =>
+                      onChange(index, "weight", String(value ?? 0))
+                    }
+                    className="w-full"
+                  />
+                  <span className="w-12 text-right text-sm text-white">
+                    {typeof variant.weight === "number"
+                      ? variant.weight
+                      : Number(variant.weight) || 0}
+                    %
+                  </span>
+                </div>
               </TableCell>
               <TableCell className="text-right">
                 <Button
