@@ -1,4 +1,6 @@
+import { AssignmentsClient } from "./_components/assignments-client";
 import { ExperimentsClient } from "./_components/experiments-client";
+import { VariantsClient } from "./_components/variants-client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { HydrateClient, api } from "~/trpc/server";
 
@@ -12,19 +14,17 @@ export default async function Home() {
           <Tabs defaultValue="experiments">
             <TabsList>
               <TabsTrigger value="experiments">Experiments</TabsTrigger>
-              <TabsTrigger value="variants" disabled>
-                Variants
-              </TabsTrigger>
-              <TabsTrigger value="assignments" disabled>
-                Assignments
-              </TabsTrigger>
+              <TabsTrigger value="variants">Variants</TabsTrigger>
+              <TabsTrigger value="assignments">Assignments</TabsTrigger>
             </TabsList>
             <TabsContent value="experiments">
               <ExperimentsClient />
             </TabsContent>
             <TabsContent value="variants">
+              <VariantsClient />
             </TabsContent>
             <TabsContent value="assignments">
+              <AssignmentsClient />
             </TabsContent>
           </Tabs>
         </div>
@@ -32,4 +32,3 @@ export default async function Home() {
     </HydrateClient>
   );
 }
-

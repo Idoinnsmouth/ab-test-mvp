@@ -1,4 +1,6 @@
+import { assignmentsRouter } from "./routers/assignments";
 import { experimentsRouter } from "./routers/experiments";
+import { variantsRouter } from "./routers/variants";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -8,6 +10,8 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
  */
 export const appRouter = createTRPCRouter({
   experiments: experimentsRouter,
+  variants: variantsRouter,
+  assignments: assignmentsRouter,
 });
 
 // export type definition of API
