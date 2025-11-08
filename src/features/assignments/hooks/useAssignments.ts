@@ -28,22 +28,11 @@ export function useAssignmentsApi(experimentId?: string, userId?: string) {
     },
   );
 
-  const assignmentsListQuery = api.assignments.list.useQuery(
-    experimentId ? { experimentId } : skipToken,
-    {
-      enabled: Boolean(experimentId),
-      placeholderData: [],
-    },
-  );
-
   const assignMutation = api.assignments.assign.useMutation({
     onSuccess: (data) => {
       void utils.assignments.get.invalidate({
         experimentId: data.experimentId,
         userId: data.userId,
-      });
-      void utils.assignments.list.invalidate({
-        experimentId: data.experimentId,
       });
     },
   });
@@ -52,7 +41,6 @@ export function useAssignmentsApi(experimentId?: string, userId?: string) {
     experimentsQuery,
     experiments,
     assignmentQuery,
-    assignmentsListQuery,
     assignMutation,
     canLookup,
     trimmedUserId,

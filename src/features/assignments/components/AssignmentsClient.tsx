@@ -6,15 +6,6 @@ import { Loader2Icon, RefreshCwIcon, UserIcon } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
-
 import { useAssignmentsApi } from "../hooks/useAssignments";
 import { type AssignmentResult, type Experiment } from "../types";
 
@@ -28,7 +19,6 @@ export function AssignmentsClient() {
     experimentsQuery,
     experiments,
     assignmentQuery,
-    assignmentsListQuery,
     assignMutation,
     canLookup,
     trimmedUserId,
@@ -215,60 +205,6 @@ export function AssignmentsClient() {
         </div>
       )}
 
-      {selectedExperiment && (
-        <div className="space-y-3 rounded-lg border border-white/10 bg-black/20 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-zinc-400">Existing assignments</p>
-              <p className="text-lg font-semibold text-white">
-                {selectedExperiment.name}
-              </p>
-            </div>
-            {assignmentsListQuery.isFetching && (
-              <span className="text-xs text-zinc-400">Refreshing…</span>
-            )}
-          </div>
-          <div className="rounded-md border border-white/10">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-white/5">
-                  <TableHead>User ID</TableHead>
-                  <TableHead>Variant</TableHead>
-                  <TableHead className="text-right">Assigned</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {assignmentsListQuery.data?.map((assignment) => (
-                  <TableRow key={assignment.id}>
-                    <TableCell>{assignment.userId}</TableCell>
-                    <TableCell>
-                      <span className="font-semibold text-white">
-                        {assignment.variant.key}
-                      </span>
-                      <span className="ml-2 text-xs text-zinc-500">
-                        {assignment.variant.weight}%
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right text-sm text-zinc-400">
-                      {new Date(assignment.createdAt).toLocaleString()}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {assignmentsListQuery.data?.length === 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={3}
-                      className="py-8 text-center text-sm text-zinc-500"
-                    >
-                      No assignments yet. Assign a user above to get started.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      )}
     </section>
   );
 }
