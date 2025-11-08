@@ -7,10 +7,14 @@ const EMPTY_EXPERIMENTS: Experiment[] = [];
 
 export function useAssignmentsApi(experimentId?: string, userId?: string) {
   const utils = api.useUtils();
-  const experimentsQuery = api.experiments.list.useQuery(undefined, {
-    placeholderData: (prev) => prev ?? [],
-  });
-  const experiments = experimentsQuery.data ?? EMPTY_EXPERIMENTS;
+  const experimentsQuery = api.experiments.list.useQuery(
+    { limit: 100 },
+    {
+      placeholderData: (prev) =>
+        prev ?? { items: EMPTY_EXPERIMENTS, nextCursor: null },
+    },
+  );
+  const experiments = experimentsQuery.data?.items ?? EMPTY_EXPERIMENTS;
 
   const trimmedUserId = userId?.trim() ?? "";
   const canLookup = Boolean(experimentId && trimmedUserId.length >= 3);

@@ -64,6 +64,8 @@ export const listExperimentsInputSchema = z
   .object({
     search: z.string().trim().min(1).max(64).optional(),
     status: z.array(experimentStatusSchema).min(1).optional(),
+    cursor: z.string().cuid().optional(),
+    limit: z.number().int().min(1).max(100).optional(),
   })
   .optional();
 export type ListExperimentsInput = z.infer<typeof listExperimentsInputSchema>;

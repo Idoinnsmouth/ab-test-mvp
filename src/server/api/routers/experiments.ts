@@ -11,6 +11,8 @@ import {
 import type { ExperimentBase } from "~/features/experiments/schemas";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
+const DEFAULT_PAGE_SIZE = 20;
+
 const normalizeDates = (data: ExperimentBase) => ({
   name: data.name,
   status: data.status,
@@ -50,43 +52,67 @@ const handlePrismaError = (error: unknown): never => {
 };
 
 export const experimentsRouter = createTRPCRouter({
-  list: publicProcedure.input(listExperimentsInputSchema).query(async ({ ctx, input }) => {
-    const filters = input ?? {};
-    const where: Prisma.ExperimentWhereInput = {};
+  list: publicProcedure
+    .input(listExperimentsInputSchema)
+    .query(async ({ ctx, input }) => {
+      const filters = input ?? {};
+      const where: Prisma.ExperimentWhereInput = {};
 
-    if (filters.search) {
-      where.OR = [
-        {
-          name: {
-            contains: filters.search.toLowerCase(),
+      if (filters.search) {
+        where.OR = [
+          {
+            name: {
+              contains: filters.search.toLowerCase(),
+            },
+          },
+          {
+            strategy: {
+              contains: filters.search.toLowerCase(),
+            },
+          },
+        ];
+      }
+
+      if (filters.status) {
+        where.status = {
+          in: filters.status,
+        };
+      }
+
+      const limit = Math.min(
+        Math.max(filters.limit ?? DEFAULT_PAGE_SIZE, 1),
+        100,
+      );
+
+      const experiments = await ctx.db.experiment.findMany({
+        where,
+        orderBy: [
+          { createdAt: "desc" },
+          { id: "desc" },
+        ],
+        include: {
+          _count: {
+            select: {
+              variants: true,
+            },
           },
         },
-        {
-          strategy: {
-            contains: filters.search.toLowerCase(),
-          },
-        },
-      ];
-    }
+        take: limit + 1,
+        cursor: filters.cursor ? { id: filters.cursor } : undefined,
+        skip: filters.cursor ? 1 : 0,
+      });
 
-    if (filters.status) {
-      where.status = {
-        in: filters.status,
+      let nextCursor: string | null = null;
+      if (experiments.length > limit) {
+        const nextItem = experiments.pop();
+        nextCursor = nextItem?.id ?? null;
+      }
+
+      return {
+        items: experiments,
+        nextCursor,
       };
-    }
-
-    return ctx.db.experiment.findMany({
-      where,
-      orderBy: [{ createdAt: "desc" }],
-      include: {
-        _count: {
-          select: {
-            variants: true,
-          },
-        },
-      },
-    });
-  }),
+    }),
 
   create: publicProcedure
     .input(experimentInputSchema)

@@ -1,4 +1,10 @@
-import { Loader2Icon, Edit2Icon, Trash2Icon, CalendarIcon } from "lucide-react";
+import {
+  Loader2Icon,
+  Edit2Icon,
+  Trash2Icon,
+  CalendarIcon,
+} from "lucide-react";
+import { useEffect, useRef } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -22,6 +28,9 @@ type ExperimentsTableProps = {
   onEdit: (experiment: Experiment) => void;
   onDelete: (experiment: Experiment) => void;
   disableDelete: boolean;
+  onLoadMore: () => void;
+  hasMore: boolean;
+  isFetchingNextPage: boolean;
 };
 
 export function ExperimentsTable({
@@ -31,7 +40,36 @@ export function ExperimentsTable({
   onEdit,
   onDelete,
   disableDelete,
+  onLoadMore,
+  hasMore,
+  isFetchingNextPage,
 }: ExperimentsTableProps) {
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const sentinelRef = useRef<HTMLTableRowElement | null>(null);
+
+  useEffect(() => {
+    if (!hasMore) return;
+    const sentinel = sentinelRef.current;
+    const root = scrollContainerRef.current;
+    if (!sentinel || !root) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting) && !isFetchingNextPage) {
+          onLoadMore();
+        }
+      },
+      {
+        root,
+        rootMargin: "0px 0px 200px 0px",
+      },
+    );
+
+    observer.observe(sentinel);
+
+    return () => observer.disconnect();
+  }, [hasMore, isFetchingNextPage, onLoadMore]);
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between text-xs text-zinc-400">
@@ -47,20 +85,24 @@ export function ExperimentsTable({
         )}
       </div>
       <div className="rounded-lg border border-white/10 bg-black/20">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-white/2">
-              <TableHead>Name</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Strategy</TableHead>
+        <div
+          ref={scrollContainerRef}
+          className="max-h-[520px] overflow-y-auto pr-2"
+        >
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-white/2">
+                <TableHead>Name</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Strategy</TableHead>
               <TableHead className="text-center">Variants</TableHead>
               <TableHead>Schedule</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {experiments.map((experiment) => (
-              <TableRow key={experiment.id}>
+            <TableBody>
+              {experiments.map((experiment) => (
+                <TableRow key={experiment.id}>
                 <TableCell>
                   <div className="flex flex-col">
                     <span className="font-medium text-white">
@@ -113,18 +155,34 @@ export function ExperimentsTable({
                 </TableCell>
               </TableRow>
             ))}
-            {!isLoading && experiments.length === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="py-12 text-center text-zinc-400"
-                >
-                  No experiments yet. Create your first test to get started.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              {!isLoading && experiments.length === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="py-12 text-center text-zinc-400"
+                  >
+                    No experiments yet. Create your first test to get started.
+                  </TableCell>
+                </TableRow>
+              )}
+              {isFetchingNextPage && experiments.length > 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-6 text-center">
+                    <span className="flex items-center justify-center gap-2 text-xs text-zinc-400">
+                      <Loader2Icon className="size-3 animate-spin" />
+                      Loading more experiments…
+                    </span>
+                  </TableCell>
+                </TableRow>
+              )}
+              {hasMore && (
+                <TableRow ref={sentinelRef} aria-hidden className="h-2">
+                  <TableCell colSpan={6} />
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { HydrateClient, api } from "~/trpc/server";
 
 export default async function Home() {
-  await api.experiments.list.prefetch();
+  await api.experiments.list.prefetchInfinite({ limit: 20 });
 
   return (
     <HydrateClient>

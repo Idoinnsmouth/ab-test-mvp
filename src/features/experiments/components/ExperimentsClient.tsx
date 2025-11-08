@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { PlusIcon, SearchIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
@@ -22,6 +22,9 @@ export function ExperimentsClient() {
     experiments,
     isLoading,
     isFetching,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
     error,
     deleteExperiment,
     deletePending,
@@ -37,6 +40,13 @@ export function ExperimentsClient() {
 
     deleteExperiment(experiment.id);
   };
+
+  const handleLoadMore = useCallback(() => {
+    if (!hasNextPage || isFetchingNextPage) {
+      return;
+    }
+    void fetchNextPage();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   return (
     <section className="space-y-6 rounded-xl border border-white/10 bg-white/2 p-6 shadow-[0_20px_120px_rgba(0,0,0,0.65)] backdrop-blur">
@@ -118,6 +128,9 @@ export function ExperimentsClient() {
           onEdit={setEditing}
           onDelete={handleDelete}
           disableDelete={deletePending}
+          onLoadMore={handleLoadMore}
+          hasMore={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
         />
       )}
 

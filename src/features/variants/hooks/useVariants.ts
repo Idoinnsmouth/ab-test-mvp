@@ -146,12 +146,18 @@ type ValidationResult =
 export function useVariants() {
   const utils = api.useUtils();
   const {
-    data: experiments = [],
+    data: experimentsResponse,
     isLoading: experimentsLoading,
     isFetching: experimentsFetching,
-  } = api.experiments.list.useQuery(undefined, {
-    placeholderData: (prev) => prev ?? [],
-  });
+  } = api.experiments.list.useQuery(
+    { limit: 100 },
+    {
+      placeholderData: (prev) =>
+        prev ?? { items: [], nextCursor: null },
+    },
+  );
+
+  const experiments = experimentsResponse?.items ?? [];
 
   const [selectedExperimentId, setSelectedExperimentId] = useState<string>();
   const [variants, setVariants] = useState<EditableVariant[]>([]);
