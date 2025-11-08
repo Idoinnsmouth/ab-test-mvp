@@ -9,6 +9,99 @@ import {
   type Variant,
 } from "../types";
 
+const TOTAL_WEIGHT = 100;
+
+const clampWeight = (value: number) =>
+  Math.max(0, Math.min(TOTAL_WEIGHT, Math.round(value)));
+
+const coerceWeight = (weight: EditableVariant["weight"]) =>
+  clampWeight(typeof weight === "number" ? weight : Number(weight) || 0);
+
+const distributeWeights = (
+  weights: number[],
+  desiredTotal: number,
+): number[] => {
+  if (weights.length === 0) return [];
+  if (desiredTotal <= 0) return new Array<number>(weights.length).fill(0);
+  if (weights.length === 1) return [desiredTotal];
+
+  const currentTotal = weights.reduce((sum, weight) => sum + weight, 0);
+  if (currentTotal === 0) {
+    const base = Math.floor(desiredTotal / weights.length);
+    let remainder = desiredTotal - base * weights.length;
+    return weights.map(() => {
+      if (remainder > 0) {
+        remainder -= 1;
+        return base + 1;
+      }
+      return base;
+    });
+  }
+
+  const scaled = weights.map((weight) => (weight / currentTotal) * desiredTotal);
+  const floored = scaled.map((value) => Math.floor(value));
+  let remainder = desiredTotal - floored.reduce((sum, value) => sum + value, 0);
+
+  const order = scaled
+    .map((value, index) => ({ index, fraction: value - floored[index]! }))
+    .sort((a, b) => b.fraction - a.fraction);
+
+  let pointer = 0;
+  while (remainder > 0 && order.length > 0) {
+    const target = order[pointer % order.length]!;
+    floored[target.index]! += 1;
+    remainder -= 1;
+    pointer += 1;
+  }
+
+  return floored;
+};
+
+const applyWeights = (
+  variants: EditableVariant[],
+  weights: number[],
+): EditableVariant[] =>
+  variants.map((variant, index) => ({
+    ...variant,
+    weight: weights[index] ?? 0,
+  }));
+
+const rebalanceAllVariants = (variants: EditableVariant[]): EditableVariant[] => {
+  if (variants.length === 0) return variants;
+  const parsed = variants.map((variant) => coerceWeight(variant.weight));
+  const redistributed = distributeWeights(parsed, TOTAL_WEIGHT);
+  return applyWeights(variants, redistributed);
+};
+
+const rebalanceWithLock = (
+  variants: EditableVariant[],
+  lockedIndex: number,
+  nextWeight: number,
+): EditableVariant[] => {
+  if (variants.length === 0) return variants;
+  const parsed = variants.map((variant) => coerceWeight(variant.weight));
+  const target = clampWeight(nextWeight);
+  const remaining = Math.max(0, TOTAL_WEIGHT - target);
+  const otherIndices = variants
+    .map((_, index) => index)
+    .filter((index) => index !== lockedIndex);
+
+  if (otherIndices.length === 0) {
+    parsed[lockedIndex] = target;
+    return applyWeights(variants, parsed);
+  }
+
+  const otherWeights = otherIndices.map((index) => parsed[index]!);
+  const redistributed = distributeWeights(otherWeights, remaining);
+
+  parsed[lockedIndex] = target;
+  otherIndices.forEach((index, mapIndex) => {
+    parsed[index] = redistributed[mapIndex] ?? 0;
+  });
+
+  return applyWeights(variants, parsed);
+};
+
 const makeEditable = (variant: Variant): EditableVariant => ({
   id: variant.id,
   key: variant.key,
@@ -89,7 +182,7 @@ export function useVariants() {
 
   useEffect(() => {
     if (variantsQuery.data) {
-      setVariants(variantsQuery.data.map(makeEditable));
+      setVariants(rebalanceAllVariants(variantsQuery.data.map(makeEditable)));
       setLocalError(null);
     } else {
       setVariants([]);
@@ -129,34 +222,37 @@ export function useVariants() {
     key: keyof EditableVariant,
     value: string,
   ) => {
-    setVariants((prev) =>
-      prev.map((variant, variantIndex) => {
+    setVariants((prev) => {
+      if (key === "weight") {
+        const numericValue = clampWeight(Number(value));
+        return rebalanceWithLock(prev, index, numericValue);
+      }
+
+      return prev.map((variant, variantIndex) => {
         if (variantIndex !== index) return variant;
-
-        if (key === "weight") {
-          const numeric = value === "" ? "" : Number(value);
-          return { ...variant, weight: Number.isNaN(numeric) ? "" : numeric };
-        }
-
         return { ...variant, [key]: value.toUpperCase() };
-      }),
-    );
+      });
+    });
   };
 
   const addVariant = () => {
-    setVariants((prev) => [
-      ...prev,
-      { key: nextVariantKey(prev), weight: 50 },
-    ]);
+    setVariants((prev) =>
+      rebalanceAllVariants([
+        ...prev,
+        { key: nextVariantKey(prev), weight: clampWeight(TOTAL_WEIGHT / (prev.length + 1)) },
+      ]),
+    );
   };
 
   const removeVariant = (index: number) => {
-    setVariants((prev) => prev.filter((_, variantIndex) => variantIndex !== index));
+    setVariants((prev) =>
+      rebalanceAllVariants(prev.filter((_, variantIndex) => variantIndex !== index)),
+    );
   };
 
   const resetVariants = () => {
     if (variantsQuery.data) {
-      setVariants(variantsQuery.data.map(makeEditable));
+      setVariants(rebalanceAllVariants(variantsQuery.data.map(makeEditable)));
       setLocalError(null);
     }
   };
@@ -194,6 +290,11 @@ export function useVariants() {
     const uniqueKeys = new Set(keys);
     if (uniqueKeys.size !== keys.length) {
       return { error: "Variant keys must be unique." };
+    }
+
+    const totalWeight = sanitized.reduce((sum, variant) => sum + variant.weight, 0);
+    if (totalWeight !== TOTAL_WEIGHT) {
+      return { error: "Variant weights must add up to 100%." };
     }
 
     return { data: sanitized };
