@@ -7,6 +7,10 @@ COPY prisma ./prisma
 RUN npm ci
 
 FROM base AS builder
+ARG DATABASE_URL="file:./db.sqlite"
+ARG ASSIGNMENT_SERVICE_URL="http://localhost:8080"
+ENV DATABASE_URL=$DATABASE_URL
+ENV ASSIGNMENT_SERVICE_URL=$ASSIGNMENT_SERVICE_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
@@ -30,6 +34,7 @@ RUN chmod +x /app/docker-entrypoint.sh
 
 ENV NODE_ENV=production
 ENV DATABASE_URL="file:./db.sqlite"
+ENV ASSIGNMENT_SERVICE_URL="http://assignment-service:8080"
 ENV PORT=3000
 EXPOSE 3000
 
