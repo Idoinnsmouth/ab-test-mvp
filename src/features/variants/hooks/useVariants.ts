@@ -108,11 +108,13 @@ export function useVariants() {
     },
   });
 
+  // using useMemo here to avoid re-normlazing a long list (thinking about scale)
   const normalizedServer = useMemo(
     () => normalizeVariants(variantsQuery.data ?? []),
     [variantsQuery.data],
   );
 
+  // using useMemo here to avoid re-normlazing a long list (thinking about scale)
   const normalizedLocal = useMemo(
     () => normalizeVariants(variants),
     [variants],

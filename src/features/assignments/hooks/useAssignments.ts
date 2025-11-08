@@ -1,5 +1,4 @@
 import { skipToken } from "@tanstack/react-query";
-import { useMemo } from "react";
 
 import { api } from "~/trpc/react";
 import { type Experiment } from "../types";
@@ -13,7 +12,7 @@ export function useAssignmentsApi(experimentId?: string, userId?: string) {
   });
   const experiments = experimentsQuery.data ?? EMPTY_EXPERIMENTS;
 
-  const trimmedUserId = useMemo(() => userId?.trim() ?? "", [userId]);
+  const trimmedUserId = userId?.trim() ?? "";
   const canLookup = Boolean(experimentId && trimmedUserId.length >= 3);
 
   const assignmentQuery = api.assignments.get.useQuery(
