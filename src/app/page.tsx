@@ -1,6 +1,6 @@
-import { AssignmentsClient } from "./_components/assignments-client";
-import { ExperimentsClient } from "./_components/experiments-client";
-import { VariantsClient } from "./_components/variants-client";
+import { AssignmentsClient } from "~/features/assignments/components/AssignmentsClient";
+import { ExperimentsClient } from "~/features/experiments/components/ExperimentsClient";
+import { VariantsClient } from "~/features/variants/components/VariantsClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { HydrateClient, api } from "~/trpc/server";
 

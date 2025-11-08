@@ -11,7 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { type EditableVariant } from "./types";
+
+import { type EditableVariant } from "../types";
 
 type VariantsTableProps = {
   variants: EditableVariant[];
@@ -88,7 +89,10 @@ export function VariantsTable({
           ))}
           {variants.length === 0 && (
             <TableRow>
-              <TableCell colSpan={3} className="py-10 text-center text-sm text-zinc-500">
+              <TableCell
+                colSpan={3}
+                className="py-10 text-center text-sm text-zinc-500"
+              >
                 No variants yet. Add one to get started.
               </TableCell>
             </TableRow>

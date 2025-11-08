@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 
 import { api, type RouterInputs } from "~/trpc/react";
-import { type ExperimentStatus } from "./types";
+
+import { type ExperimentStatus } from "../types";
 
 type ListInput = RouterInputs["experiments"]["list"];
 

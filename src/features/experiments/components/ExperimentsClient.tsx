@@ -6,11 +6,12 @@ import { PlusIcon, SearchIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogTrigger } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
-import { statusLabels } from "./experiments/constants";
-import { ExperimentFormDialog } from "./experiments/experiment-form-dialog";
-import { ExperimentsTable } from "./experiments/experiments-table";
-import { useExperiments } from "./experiments/use-experiments";
-import { type Experiment } from "./experiments/types";
+
+import { statusLabels } from "../constants";
+import { useExperiments } from "../hooks/useExperiments";
+import { type Experiment } from "../types";
+import { ExperimentFormDialog } from "./ExperimentFormDialog";
+import { ExperimentsTable } from "./ExperimentsTable";
 
 export function ExperimentsClient() {
   const {

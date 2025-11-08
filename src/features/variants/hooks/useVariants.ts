@@ -2,11 +2,12 @@ import { skipToken } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 
 import { api } from "~/trpc/react";
+
 import {
   type EditableVariant,
   type Experiment,
   type Variant,
-} from "./types";
+} from "../types";
 
 const makeEditable = (variant: Variant): EditableVariant => ({
   id: variant.id,

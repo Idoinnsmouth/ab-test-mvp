@@ -1,3 +1,5 @@
+import { Loader2Icon, Edit2Icon, Trash2Icon, CalendarIcon } from "lucide-react";
+
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -9,9 +11,9 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { cn } from "~/lib/utils";
-import { statusLabels, statusStyles, formatter } from "./constants";
-import { type Experiment } from "./types";
-import { Loader2Icon, Edit2Icon, Trash2Icon, CalendarIcon } from "lucide-react";
+
+import { formatter, statusLabels, statusStyles } from "../constants";
+import { type Experiment } from "../types";
 
 type ExperimentsTableProps = {
   experiments: Experiment[];
@@ -113,7 +115,10 @@ export function ExperimentsTable({
             ))}
             {!isLoading && experiments.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="py-12 text-center text-zinc-400">
+                <TableCell
+                  colSpan={6}
+                  className="py-12 text-center text-zinc-400"
+                >
                   No experiments yet. Create your first test to get started.
                 </TableCell>
               </TableRow>

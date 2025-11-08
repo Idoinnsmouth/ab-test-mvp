@@ -3,8 +3,9 @@
 import { Loader2Icon, PlusIcon, SaveIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
-import { VariantsTable } from "./variants/variants-table";
-import { useVariants } from "./variants/use-variants";
+
+import { useVariants } from "../hooks/useVariants";
+import { VariantsTable } from "./VariantsTable";
 
 export function VariantsClient() {
   const {
@@ -110,7 +111,7 @@ export function VariantsClient() {
         />
       ) : null}
 
-  {localError && (
+      {localError && (
         <p className="text-sm text-red-400" role="alert">
           {localError}
         </p>

@@ -10,8 +10,9 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
-import { statusLabels } from "./constants";
-import { type Experiment, type ExperimentStatus } from "./types";
+
+import { statusLabels } from "../constants";
+import { type Experiment, type ExperimentStatus } from "../types";
 
 type ExperimentFormDialogProps = {
   mode: "create" | "edit";

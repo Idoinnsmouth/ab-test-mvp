@@ -3,72 +3,15 @@ import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import {
+  experimentInputSchema,
+  experimentUpdateSchema,
+  listExperimentsInputSchema,
+} from "~/features/experiments/schemas";
+import type { ExperimentBase } from "~/features/experiments/schemas";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
-const experimentStatusSchema = z.enum([
-  "draft",
-  "active",
-  "paused",
-  "completed",
-]);
-
-const snakeCaseNameSchema = z
-  .string()
-  .min(3, "Name must be at least 3 characters.")
-  .max(64, "Name must be 64 characters or fewer.")
-  .regex(
-    /^[a-z0-9]+(?:_[a-z0-9]+)*$/,
-    "Only lowercase snake_case values are allowed.",
-  );
-
-const optionalDateSchema = z
-  .union([z.date(), z.string().datetime()])
-  .optional()
-  .nullable()
-  .transform((value) => {
-    if (!value) return null;
-    return value instanceof Date ? value : new Date(value);
-  });
-
-const experimentBaseSchema = z.object({
-  name: snakeCaseNameSchema,
-  status: experimentStatusSchema.default("draft"),
-  strategy: z.string().trim().min(1).max(64).default("uniform"),
-  startAt: optionalDateSchema,
-  endAt: optionalDateSchema,
-});
-
-const ensureChronologicalSchedule = (
-  data: Pick<z.infer<typeof experimentBaseSchema>, "startAt" | "endAt">,
-  ctx: z.RefinementCtx,
-) => {
-  if (data.startAt && data.endAt && data.endAt < data.startAt) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["endAt"],
-      message: "endAt must be after startAt.",
-    });
-  }
-};
-
-const experimentInputSchema = experimentBaseSchema.superRefine(
-  ensureChronologicalSchedule,
-);
-
-const experimentUpdateSchema = experimentBaseSchema
-  .extend({
-    id: z.string().cuid(),
-  })
-  .superRefine(ensureChronologicalSchedule);
-
-const listInputSchema = z
-  .object({
-    search: z.string().trim().min(1).max(64).optional(),
-    status: z.array(experimentStatusSchema).min(1).optional(),
-  })
-  .optional();
-
-const normalizeDates = (data: z.infer<typeof experimentBaseSchema>) => ({
+const normalizeDates = (data: ExperimentBase) => ({
   name: data.name,
   status: data.status,
   strategy: data.strategy,
@@ -107,7 +50,7 @@ const handlePrismaError = (error: unknown): never => {
 };
 
 export const experimentsRouter = createTRPCRouter({
-  list: publicProcedure.input(listInputSchema).query(async ({ ctx, input }) => {
+  list: publicProcedure.input(listExperimentsInputSchema).query(async ({ ctx, input }) => {
     const filters = input ?? {};
     const where: Prisma.ExperimentWhereInput = {};
 
