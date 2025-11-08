@@ -1,7 +1,7 @@
-import { randomInt } from "crypto";
 import { z } from "zod";
 
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { env } from "~/env";
 
 const assignmentInputSchema = z.object({
   experimentId: z.string().cuid(),
@@ -14,33 +14,42 @@ const assignmentInputSchema = z.object({
 
 const sanitizeUserId = (value: string) => value.trim();
 
-const pickVariant = (
-  variants: Array<{ id: string; weight: number }>,
-): string => {
-  const nonNegative = variants.map((variant) => ({
-    id: variant.id,
-    weight: Math.max(0, variant.weight),
-  }));
-  const totalWeight = nonNegative.reduce(
-    (total, variant) => total + variant.weight,
-    0,
-  );
+type AssignmentServiceResponse = {
+  experimentId: string;
+  userId: string;
+  variantKey: string;
+};
 
-  if (totalWeight <= 0) {
-    const index = randomInt(variants.length);
-    return variants[index]!.id;
+const assignEndpoint = new URL("/assign", env.ASSIGNMENT_SERVICE_URL);
+
+const callAssignmentService = async (
+  experimentId: string,
+  userId: string,
+): Promise<AssignmentServiceResponse> => {
+  let response: Response;
+  try {
+    response = await fetch(assignEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ experimentId, userId }),
+      cache: "no-store",
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown network error";
+    throw new Error(`Assignment service unreachable: ${message}`);
   }
 
-  const threshold = randomInt(totalWeight);
-  let cumulative = 0;
-  for (const variant of nonNegative) {
-    cumulative += variant.weight;
-    if (threshold < cumulative) {
-      return variant.id;
-    }
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(
+      detail?.trim()
+        ? `Assignment service failed (${response.status}): ${detail}`
+        : `Assignment service failed with status ${response.status}`,
+    );
   }
 
-  return nonNegative[nonNegative.length - 1]!.id;
+  return (await response.json()) as AssignmentServiceResponse;
 };
 
 export const assignmentsRouter = createTRPCRouter({
@@ -115,32 +124,31 @@ export const assignmentsRouter = createTRPCRouter({
         };
       }
 
-      const variants = await ctx.db.variant.findMany({
+      const variantCount = await ctx.db.variant.count({
         where: { experimentId: input.experimentId },
-        orderBy: [{ createdAt: "asc" }],
       });
 
-      if (variants.length < 2) {
+      if (variantCount < 2) {
         throw new Error("An experiment must have at least two variants.");
       }
 
-      const chosenVariantId = pickVariant(
-        variants.map((variant) => ({
-          id: variant.id,
-          weight: variant.weight,
-        })),
-      );
+      await callAssignmentService(input.experimentId, userId);
 
-      const assignment = await ctx.db.assignment.create({
-        data: {
-          userId,
-          experimentId: input.experimentId,
-          variantId: chosenVariantId,
+      const assignment = await ctx.db.assignment.findUnique({
+        where: {
+          experimentId_userId: {
+            experimentId: input.experimentId,
+            userId,
+          },
         },
         include: {
           variant: true,
         },
       });
+
+      if (!assignment) {
+        throw new Error("Assignment service did not persist a result.");
+      }
 
       return {
         id: assignment.id,

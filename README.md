@@ -12,6 +12,17 @@ npm run db:migrate
 npm run dev    # http://localhost:3000
 ```
 
+### Assignment service (Go)
+
+The Next.js app now delegates sticky assignment decisions to the Go microservice in `micro-service/`.
+
+```bash
+cd ab-test-mvp/micro-service
+ASSIGNMENTS_DATABASE_URL="file:../prisma/db.sqlite" PORT=8080 go run ./cmd/server
+```
+
+Update `.env` so `ASSIGNMENT_SERVICE_URL` points to the running service (default `http://localhost:8080`). Both apps share the same SQLite file, so variants/assignments stay in sync.
+
 Production build:
 
 ```bash
@@ -19,22 +30,20 @@ npm run build
 npm run start
 ```
 
-### Docker
+### Docker / Compose
+
+Spin up both the Next.js app and Go assignment service with a shared SQLite volume:
 
 ```bash
-docker build -t ab-test-mvp .
-docker run --rm -p 3000:3000 --name ab-test-mvp ab-test-mvp
+docker compose up --build
 ```
 
-The entrypoint runs `prisma migrate deploy` before `next start`.
-To persist the SQLite DB, mount a volume and override `DATABASE_URL`, e.g.
+Services:
 
-```
-docker run --rm -p 3000:3000 \
-  -v $(pwd)/data:/data \
-  -e DATABASE_URL=file:/data/db.sqlite \
-  ab-test-mvp
-```
+- `web`: Next.js + Prisma. Requires `DATABASE_URL=file:/data/db.sqlite` and `ASSIGNMENT_SERVICE_URL=http://assignment-service:8080`.
+- `assignment-service`: Go microservice compiled from `micro-service/`, sharing the same SQLite file via `ASSIGNMENTS_DATABASE_URL=file:/data/db.sqlite`.
+
+The compose file (at repo root) already wires these values and mounts the `sqlite_data` volume so both containers see the same DB. The web container still runs `prisma migrate deploy` on startup.
 
 ## Storage Choice
 
@@ -52,9 +61,8 @@ docker run --rm -p 3000:3000 \
 
 ## Next Steps
 
-1. Go microservice for assignment logic
-2. Automated tests for assignment logic
-3. Seed script to create sample experiments/variants for demos.
-4. Add roles with NextAuth (viewer/editor/admin)
-5. Analytics (per-variant counts, conversion hooks).
-6. Deployment recipe for Vercel/Fly.io with externalized SQLite or Turso.
+1. Automated tests for cross-service assignment flow.
+2. Seed script to create sample experiments/variants for demos.
+3. Add roles with NextAuth (viewer/editor/admin)
+4. Analytics (per-variant counts, conversion hooks).
+5. Deployment recipe for Vercel/Fly.io with externalized SQLite or Turso.
